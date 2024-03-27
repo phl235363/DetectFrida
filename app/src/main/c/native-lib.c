@@ -77,6 +77,10 @@ static inline void detect_frida_namedpipe();
 
 static inline void detect_frida_memdiskcompare();
 
+static inline int crash(int randomval);
+
+unsigned int gpCrash = 0xfa91b9cd;
+
 //Upon loading the library, this function annotated as constructor starts executing
 __attribute__((constructor))
 void detectfrida() {
@@ -244,6 +248,7 @@ scan_executable_segments(char *map, execSection *pElfSectArr, const char *librar
                                         "Executable Section Manipulated, "
                                         "maybe due to Frida or other hooking framework."
                                         "Act Now!!!");
+                    crash(0x9a3b);
                 }
             }
 
@@ -347,6 +352,7 @@ static inline void detect_frida_threads() {
                     //int ret = my_tgkill(getpid(), tid, SIGSTOP);
                     __android_log_print(ANDROID_LOG_WARN, APPNAME,
                                         "Frida specific thread found. Act now!!!");
+                    crash(0x3d5f);
                 }
                 my_close(fd);
             }
@@ -378,6 +384,7 @@ static inline void detect_frida_namedpipe() {
                 if (NULL != my_strstr(buf, FRIDA_NAMEDPIPE_LINJECTOR)) {
                     __android_log_print(ANDROID_LOG_WARN, APPNAME,
                                         "Frida specific named pipe found. Act now!!!");
+                    crash(0x3d5f);
                 }
             }
 
@@ -409,5 +416,18 @@ static inline void detect_frida_memdiskcompare() {
     }
     my_close(fd);
 
+}
+
+__attribute__((always_inline))
+static inline int crash(int randomval){
+
+    volatile int *p = gpCrash;
+    p += randomval;
+    p += *p + randomval;
+    /* If it still doesnt crash..crash using null pointer */
+    p = 0;
+    p += *p;
+
+    return *p;
 }
 
