@@ -8,10 +8,9 @@ on:
   workflow_dispatch:
 
 env:
-  # Điều chỉnh cho dự án của bạn nếu cần
-  ANDROID_COMPILE_SDK: 34
-  ANDROID_BUILD_TOOLS: 34.0.0
-  NDK_VERSION: 25.2.9519653   # repo này có native code ⇒ bật NDK
+  ANDROID_COMPILE_SDK: 33
+  ANDROID_BUILD_TOOLS: 33.0.2
+  NDK_VERSION: 25.2.9519653
   CMAKE_VERSION: 3.22.1
 
 jobs:
@@ -19,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up JDK
@@ -28,7 +27,7 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Set up Gradle (cache)
+      - name: Set up Gradle (with cache)
         uses: gradle/actions/setup-gradle@v3
 
       - name: Install Android SDK / Build-Tools / NDK
@@ -40,28 +39,27 @@ jobs:
             ndk;${{ env.NDK_VERSION }}
             cmake;${{ env.CMAKE_VERSION }}
 
-      # Nếu dự án dùng wrapper, lệnh dưới là đủ. (Repo này có gradlew)
-      - name: Build Debug
+      - name: Build Debug APK
         run: ./gradlew --no-daemon clean assembleDebug
 
-      - name: Build Release (unsigned)
+      - name: Build Release APK (unsigned)
         run: ./gradlew --no-daemon assembleRelease
 
-      - name: Upload debug APK
+      - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         with:
           name: app-debug-apk
           path: |
             **/build/outputs/apk/debug/*.apk
 
-      - name: Upload release APK (unsigned)
+      - name: Upload Release APK (unsigned)
         uses: actions/upload-artifact@v4
         with:
           name: app-release-apk
           path: |
             **/build/outputs/apk/release/*.apk
 
-      - name: Upload ProGuard/R8 mapping (nếu có)
+      - name: Upload ProGuard / Mapping files (optional)
         if: always()
         uses: actions/upload-artifact@v4
         with:
